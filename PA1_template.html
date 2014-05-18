@@ -192,7 +192,7 @@ hljs.initHighlightingOnLoad();
 
 <h2>Loading and preprocessing the data</h2>
 
-<p>The data for this analysis is available from &ldquo;Roger&#39;s GitHub&rdquo;, the following code assumes the repository has been cloned onto the working machine. The first step in any analysis is getting a feel for how the data is structured. From there we can determine if any changes need to be made.</p>
+<p>The data for this analysis is available from Prof. Roger Peng&#39;s gitHub account at <a href="https://github.com/rdpeng/RepData_PeerAssessment1">https://github.com/rdpeng/RepData_PeerAssessment1</a>, the following code assumes the repository has been cloned onto the working machine. The first step in any analysis is getting a feel for how the data is structured. From there we can determine if any changes need to be made.</p>
 
 <pre><code class="r">if (!&quot;activity.csv&quot; %in% dir()) unzip(&quot;activity.zip&quot;)
 activity &lt;- read.csv(&quot;activity.csv&quot;)
@@ -265,7 +265,19 @@ head(dailySteps)
 ## 6 2012-10-06      15420
 </code></pre>
 
-<p>We can now quite clearly see that the individual, on average, walks 1.0766 &times; 10<sup>4</sup> steps each day. We found the average value, but is this a good measure of the center, the median number of steps in a single day is 10765. These values are quite close and seem to imply the distribution of steps is approximately symmetric. The histogram below shows that there is more variability in daily steps than these two point estimates would suggest. On most days the individual took between 6,000 and 16,000 steps, but there are a few days with values significantly higher or lower than this. At this point it is difficult to determine what might be causing these atypical values.</p>
+<pre><code class="r">mean(dailySteps$stepsByDay, na.rm = TRUE)
+</code></pre>
+
+<pre><code>## [1] 10766
+</code></pre>
+
+<pre><code class="r">median(dailySteps$stepsByDay, na.rm = TRUE)
+</code></pre>
+
+<pre><code>## [1] 10765
+</code></pre>
+
+<p>We can now quite clearly see that the individual, on average, walks 1.0766 &times; 10<sup>4</sup> steps each day. We found the average value, but is this a good measure of the center? The median number of steps in a single day is 10765. These values are quite close and seem to imply the distribution of steps is approximately symmetric. The histogram below shows that there is more variability in daily steps than these two point estimates would suggest. On most days the individual took between 6,000 and 16,000 steps, but there are a few days with values significantly higher or lower than this. At this point it is difficult to determine what might be causing these atypical values.</p>
 
 <pre><code class="r">require(ggplot2)
 </code></pre>
@@ -297,8 +309,14 @@ head(dailySteps)
 ##    0.00    2.49   34.10   37.40   52.80  206.00
 </code></pre>
 
+<pre><code class="r">timeSteps[which.max(timeSteps$meanSteps), 1]
+</code></pre>
+
+<pre><code>## [1] 835
+</code></pre>
+
 <p>we see that in 75% of the intervals less than 53 steps were taken, while the first quantile&#39;s value of 2.5 steps per five minutes suggest that the individuals in the data set are not far off from the recommended eight hours of sleep per night. The last quantile is the most interesting, the individuals are very active for only a small subset of the day. When is this occurring?
-It appears 835 is when our subjects were at their most active. The plot below shows a very clear spike between the the times of 8:10 and 9:25. It then exhibits a more cyclic nature, while maintaining a minimum level of ~25 steps per interval before trailing off during the evening hours. This seems to suggest that the individuals in the study are most active while at work, and in particular during the morning rush into the office. More personal information would be required to verify these conjectures.</p>
+It appears 835 is when our subjects were at their most active. The plot below shows a very clear spike between the the times of 8:10 and 9:25. It then exhibits a more cyclic nature, while maintaining a minimum level of ~25 steps per interval before trailing off during the evening hours. This seems to suggest that the individuals in the study are most active while at work, and in particular during the morning rush into the office. More personal information about the participants of the study would be required to verify these conjectures.</p>
 
 <pre><code class="r">ggplot(timeSteps, aes(x = interval, y = meanSteps)) + geom_line() + xlab(&quot;Time&quot;) + 
     ylab(&quot;Average Steps&quot;) + ggtitle(&quot;Steps taken during an average day&quot;)
@@ -308,7 +326,7 @@ It appears 835 is when our subjects were at their most active. The plot below sh
 
 <h2>Imputing missing values</h2>
 
-<p>So far we have ignored the days with missing measurements, this was done in part to avoid the issue of calculating the total number of steps for a day when half the intervals were missing. It may however be possible to use the data we do have available to attempt to fill in the missing measurements. Before attempting to impute it is important to make sure lack of data is not systematic, or consistent. If the values appear to be missing at random, we should be ably to safely fill them in with the data we have left over.</p>
+<p>So far we have ignored the days with missing measurements, this was done in part to avoid the issue of calculating the total number of steps for a day when half the intervals were missing. It may however be possible to use the data we do have available to attempt to fill in the missing measurements. Before attempting to impute it is important to make sure lack of data is not systematic. If the values appear to be missing at random, we should be ably to safely fill them in with the data we have left over.</p>
 
 <pre><code class="r">naIndex &lt;- which(is.na(processed$steps))
 length(naIndex)
@@ -362,8 +380,19 @@ The benefits of imputing on this data set are debatable, however the exploratory
 
 <pre><code class="r">imputeVals &lt;- ddply(processed, .(dayOfWeek, interval), summarize, meanSteps = mean(steps, 
     na.rm = TRUE))
+head(imputeVals)
+</code></pre>
 
-getImputeVal &lt;- function(day, interval) {
+<pre><code>##   dayOfWeek interval meanSteps
+## 1    Friday        0         0
+## 2    Friday        5         0
+## 3    Friday       10         0
+## 4    Friday       15         0
+## 5    Friday       20         0
+## 6    Friday       25         0
+</code></pre>
+
+<pre><code class="r">getImputeVal &lt;- function(day, interval) {
     imputeVals[imputeVals$dayOfWeek == day &amp; imputeVals$interval == interval, 
         &quot;meanSteps&quot;]
 }
