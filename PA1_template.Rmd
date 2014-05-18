@@ -35,6 +35,8 @@ Our first question is also our simplest: What is an average day? In order to ans
 require(plyr)
 dailySteps <- ddply(processed, .(date), summarize, stepsByDay= sum(steps))
 head(dailySteps)
+mean(dailySteps$stepsByDay, na.rm=TRUE)
+median(dailySteps$stepsByDay, na.rm=TRUE)
 ```
 We can now quite clearly see that the individual, on average, walks `r mean(dailySteps$stepsByDay, na.rm=TRUE)` steps each day. We found the average value, but is this a good measure of the center? The median number of steps in a single day is `r median(dailySteps$stepsByDay, na.rm=TRUE)`. These values are quite close and seem to imply the distribution of steps is approximately symmetric. The histogram below shows that there is more variability in daily steps than these two point estimates would suggest. On most days the individual took between 6,000 and 16,000 steps, but there are a few days with values significantly higher or lower than this. At this point it is difficult to determine what might be causing these atypical values.
 ```{r}
@@ -55,6 +57,7 @@ timeSteps <- ddply(processed, .(interval), summarize, meanSteps = mean(steps,
 The number of steps taken in each five minute interval has a rather large range, [`r range(timeSteps$meanSteps)`] but if we look more closely 
 ```{r} 
 summary(timeSteps$meanSteps)
+timeSteps[which.max(timeSteps$meanSteps),1]
 ``` 
 we see that in 75% of the intervals less than 53 steps were taken, while the first quantile's value of 2.5 steps per five minutes suggest that the individuals in the data set are not far off from the recommended eight hours of sleep per night. The last quantile is the most interesting, the individuals are very active for only a small subset of the day. When is this occurring?
 It appears `r timeSteps[which.max(timeSteps$meanSteps),1]` is when our subjects were at their most active. The plot below shows a very clear spike between the the times of 8:10 and 9:25. It then exhibits a more cyclic nature, while maintaining a minimum level of ~25 steps per interval before trailing off during the evening hours. This seems to suggest that the individuals in the study are most active while at work, and in particular during the morning rush into the office. More personal information about the participants of the study would be required to verify these conjectures.
@@ -82,7 +85,7 @@ The benefits of imputing on this data set are debatable, however the exploratory
 ```{r}
 imputeVals <- ddply(processed, .(dayOfWeek, interval), summarize, 
                     meanSteps = mean(steps, na.rm=TRUE))
-
+head(imputeVals)
 getImputeVal <- function(day, interval) {
     imputeVals[imputeVals$dayOfWeek == day & imputeVals$interval == interval,
                'meanSteps']
