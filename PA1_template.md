@@ -6,7 +6,7 @@ In this assignment we will analyze personal activity data collected from activit
  4. Are activity levels different on weekends compared to weekdays?
 
 ## Loading and preprocessing the data
-The data for this analysis is available from "Roger's GitHub", the following code assumes the repository has been cloned onto the working machine. The first step in any analysis is getting a feel for how the data is structured. From there we can determine if any changes need to be made.
+The data for this analysis is available from Prof. Roger Peng's gitHub account at https://github.com/rdpeng/RepData_PeerAssessment1, the following code assumes the repository has been cloned onto the working machine. The first step in any analysis is getting a feel for how the data is structured. From there we can determine if any changes need to be made.
 
 ```r
 if (!"activity.csv" %in% dir()) unzip("activity.zip")
@@ -93,7 +93,23 @@ head(dailySteps)
 ## 6 2012-10-06      15420
 ```
 
-We can now quite clearly see that the individual, on average, walks 1.0766 &times; 10<sup>4</sup> steps each day. We found the average value, but is this a good measure of the center, the median number of steps in a single day is 10765. These values are quite close and seem to imply the distribution of steps is approximately symmetric. The histogram below shows that there is more variability in daily steps than these two point estimates would suggest. On most days the individual took between 6,000 and 16,000 steps, but there are a few days with values significantly higher or lower than this. At this point it is difficult to determine what might be causing these atypical values.
+```r
+mean(dailySteps$stepsByDay, na.rm = TRUE)
+```
+
+```
+## [1] 10766
+```
+
+```r
+median(dailySteps$stepsByDay, na.rm = TRUE)
+```
+
+```
+## [1] 10765
+```
+
+We can now quite clearly see that the individual, on average, walks 1.0766 &times; 10<sup>4</sup> steps each day. We found the average value, but is this a good measure of the center? The median number of steps in a single day is 10765. These values are quite close and seem to imply the distribution of steps is approximately symmetric. The histogram below shows that there is more variability in daily steps than these two point estimates would suggest. On most days the individual took between 6,000 and 16,000 steps, but there are a few days with values significantly higher or lower than this. At this point it is difficult to determine what might be causing these atypical values.
 
 ```r
 require(ggplot2)
@@ -131,8 +147,16 @@ summary(timeSteps$meanSteps)
 ##    0.00    2.49   34.10   37.40   52.80  206.00
 ```
 
+```r
+timeSteps[which.max(timeSteps$meanSteps), 1]
+```
+
+```
+## [1] 835
+```
+
 we see that in 75% of the intervals less than 53 steps were taken, while the first quantile's value of 2.5 steps per five minutes suggest that the individuals in the data set are not far off from the recommended eight hours of sleep per night. The last quantile is the most interesting, the individuals are very active for only a small subset of the day. When is this occurring?
-It appears 835 is when our subjects were at their most active. The plot below shows a very clear spike between the the times of 8:10 and 9:25. It then exhibits a more cyclic nature, while maintaining a minimum level of ~25 steps per interval before trailing off during the evening hours. This seems to suggest that the individuals in the study are most active while at work, and in particular during the morning rush into the office. More personal information would be required to verify these conjectures.
+It appears 835 is when our subjects were at their most active. The plot below shows a very clear spike between the the times of 8:10 and 9:25. It then exhibits a more cyclic nature, while maintaining a minimum level of ~25 steps per interval before trailing off during the evening hours. This seems to suggest that the individuals in the study are most active while at work, and in particular during the morning rush into the office. More personal information about the participants of the study would be required to verify these conjectures.
 
 ```r
 ggplot(timeSteps, aes(x = interval, y = meanSteps)) + geom_line() + xlab("Time") + 
@@ -142,7 +166,7 @@ ggplot(timeSteps, aes(x = interval, y = meanSteps)) + geom_line() + xlab("Time")
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
 
 ## Imputing missing values
-So far we have ignored the days with missing measurements, this was done in part to avoid the issue of calculating the total number of steps for a day when half the intervals were missing. It may however be possible to use the data we do have available to attempt to fill in the missing measurements. Before attempting to impute it is important to make sure lack of data is not systematic, or consistent. If the values appear to be missing at random, we should be ably to safely fill them in with the data we have left over.
+So far we have ignored the days with missing measurements, this was done in part to avoid the issue of calculating the total number of steps for a day when half the intervals were missing. It may however be possible to use the data we do have available to attempt to fill in the missing measurements. Before attempting to impute it is important to make sure lack of data is not systematic. If the values appear to be missing at random, we should be ably to safely fill them in with the data we have left over.
 
 
 ```r
@@ -206,7 +230,20 @@ The benefits of imputing on this data set are debatable, however the exploratory
 ```r
 imputeVals <- ddply(processed, .(dayOfWeek, interval), summarize, meanSteps = mean(steps, 
     na.rm = TRUE))
+head(imputeVals)
+```
 
+```
+##   dayOfWeek interval meanSteps
+## 1    Friday        0         0
+## 2    Friday        5         0
+## 3    Friday       10         0
+## 4    Friday       15         0
+## 5    Friday       20         0
+## 6    Friday       25         0
+```
+
+```r
 getImputeVal <- function(day, interval) {
     imputeVals[imputeVals$dayOfWeek == day & imputeVals$interval == interval, 
         "meanSteps"]
